@@ -21,6 +21,12 @@
   margin-bottom: 4rem;
 }
 
+@media (min-width: 1200px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .product-card {
   background: var(--white);
   border-radius: 24px;
@@ -32,6 +38,13 @@
   grid-template-columns: 1fr 1.5fr;
   gap: 0;
   min-height: 400px;
+}
+
+@media (max-width: 768px) {
+  .product-card {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
 }
 
 .product-card:hover {
@@ -300,6 +313,20 @@
 .btn-secondary-product:hover {
   background-color: var(--primary-green);
   color: var(--white);
+}
+
+.btn-disabled {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--neutral-gray);
+  color: var(--white);
+  padding: 0.875rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .portfolio-cta {

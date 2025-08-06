@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Land Viewer Style Web Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .sidebar {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 360px;
+            height: 100vh;
+            background-color: rgba(28, 37, 51, 0.9); /* Adjusted for transparency */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            background-color: #1e90ff;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .tab.active {
+            background-color: #333;
+        }
+
+        .content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px 15px;
+        }
+
+        .aoi-item,
+        .subscription-item {
+            padding: 12px 15px;
+            background-color: #252525;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .aoi-item:hover,
+        .subscription-item:hover {
+            background-color: #333333;
+        }
+
+        .aoi-item i,
+        .subscription-item i {
+            color: #1e90ff;
+            margin-right: 10px;
+        }
+
+        .menu-icon {
+            font-size: 18px;
+            color: #b0b0b0;
+            cursor: pointer;
+        }
+
+        .footer {
+            padding: 15px;
+            border-top: 1px solid #333;
+            text-align: center;
+            background-color: #1c2533;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        #uploadAOI {
+            width: 100%;
+            padding: 15px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #uploadAOI:hover {
+            background-color: #005fcc;
+        }
+
+        #runAnalysis {
+            width: 100%;
+            padding: 15px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #runAnalysis:hover {
+            background-color: #005fcc;
+        }
+
+        .tab-content.hidden {
+            display: none;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #1e90ff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(14px);
+        }
+
+        .year-slider {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .year-slider + span {
+            display: block;
+            text-align: center;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .slider-container {
+            margin-bottom: 20px;
+        }
+
+        .legend {
+            display: flex;
+            flex-direction: column;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            margin-right: 5px;
+            border-radius: 2px;
+        }
+
+        .leaflet-control-layers {
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+        }
+
+        .leaflet-control-layers-expanded {
+            padding: 6px 10px;
+            color: #333;
+        }
+
+        .leaflet-control-layers-expanded label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #1e90ff;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .download-button {
+            position: absolute;
+            bottom: 20px;
+            right: 380px; /* Adjusted to be to the left of the sidebar */
+            padding: 10px 20px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1001; /* Ensure the button is above the map */
+        }
+
+        .download-button:hover {
+            background-color: #005fcc;
+        }
+
+        .comparison-button {
+            position: absolute;
+            bottom: 20px;
+            right: 630px; /* Adjusted to add more space between the buttons */
+            padding: 10px 20px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1001; /* Ensure the button is above the map */
+        }
+
+        .comparison-button:hover {
+            background-color: #005fcc;
+        }
+
+        .info-icon {
+            position: absolute;
+            top: 10px;
+            right: 380px; /* Adjusted to be to the left of the sidebar */
+            font-size: 24px;
+            color: #1e90ff;
+            cursor: pointer;
+            z-index: 1001; /* Ensure the icon is above the map */
+        }
+
+        .info-popup {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 380px; /* Adjusted to be to the left of the sidebar */
+            width: 300px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            z-index: 1001; /* Ensure the popup is above the map */
+        }
+
+        .info-popup h3 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .info-popup p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info-popup .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .info-popup ul {
+            padding-left: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info-popup ul li {
+            margin-bottom: 10px;
+        }
+
+        .info-popup .backend-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .info-popup .backend-button:hover {
+            background-color: #005fcc;
+        }
+
+        .backend-image {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 380px; /* Adjusted to be to the left of the sidebar */
+            width: 900px; /* Increased width */
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            z-index: 1001; /* Ensure the image is above the map */
+        }
+
+        .backend-image img {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .backend-image .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <i class="fas fa-info-circle info-icon" id="infoIcon"></i>
+    <div class="info-popup" id="infoPopup">
+        <span class="close-btn" id="closePopup">&times;</span>
+        <h3>Information</h3>
+        <p>This application provides the following features:</p>
+        <ul>
+            <li>Upload AOI (Area of Interest) in GeoJSON format.</li>
+            <li>Run analysis on the uploaded AOI.</li>
+            <li>Toggle different layers such as Carbon Stock and Vegetation Index.</li>
+            <li>Adjust the year slider to view data for different years.</li>
+            <li>Download sample GeoJSON files.</li>
+            <li>Compare Sentinel-2 and Super Resolution data.</li>
+        </ul>
+        <button class="backend-button" id="backendFlow">Show backend flow</button>
+    </div>
+    <div class="backend-image" id="backendImage">
+        <span class="close-btn" id="closeImage">&times;</span>
+        <img src="b_images/Flow_backend_carbon_analysis.png" alt="Backend Flow">
+    </div>
+    <button class="comparison-button" id="showComparison">S2 vs S2 Super Reso</button>
+    <button class="download-button" id="downloadGeojson">Download Sample Geojson</button>
+    <div class="sidebar">
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" data-tab="aoi-tab">MY AOI</div>
+            <div class="tab" data-tab="analysis-tab">ANALYSIS</div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="content">
+            <!-- My AOI Content -->
+            <div id="aoi-tab" class="tab-content">
+                <div class="aoi-item">
+                    <div>
+                        <i class="fas fa-map-marker-alt"></i> Kalbar
+                        <span>(05.09.2023)</span>
+                    </div>
+                    <i class="fas fa-ellipsis-v menu-icon"></i>
+                </div>
+                <div class="aoi-item">
+                    <div>
+                        <i class="fas fa-map-marker-alt"></i> Luwu Utara
+                        <span>(13.06.2023)</span>
+                    </div>
+                    <i class="fas fa-ellipsis-v menu-icon"></i>
+                </div>
+                <div class="aoi-item">
+                    <div>
+                        <i class="fas fa-map-marker-alt"></i> Banjarmasin
+                        <span>(13.06.2022)</span>
+                    </div>
+                    <i class="fas fa-ellipsis-v menu-icon"></i>
+                </div>
+                <div class="aoi-item">
+                    <div>
+                        <i class="fas fa-map-marker-alt"></i> Aceh
+                        <span>(13.06.2022)</span>
+                    </div>
+                    <i class="fas fa-ellipsis-v menu-icon"></i>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="uploadAOI" style="flex: 1;">
+                        Upload AOI <i class="fas fa-upload"></i>
+                    </button>
+                    <button id="runAnalysis" style="flex: 1;">
+                        Run Analysis <i class="fas fa-play"></i>
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept=".geojson" style="display: none;" />
+            </div>
+
+            <!-- Analysis Content -->
+            <div id="analysis-tab" class="tab-content hidden">
+                <div class="aoi-item" style="margin-bottom: 10px;">
+                    <div>
+                        <i class="fas fa-layer-group"></i> Carbon Stock
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="layer1" name="layer1" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="slider-container" style="margin-bottom: 10px;">
+                    <input type="range" min="2020" max="2024" value="2023" class="year-slider" id="year1">
+                    <span id="year1-value">2023</span>
+                </div>
+                <div class="legend" style="padding-left: 20px; margin-bottom: 10px;">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: red;"></span>
+                        <span>Very Low</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: orange;"></span>
+                        <span>Low</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: yellow;"></span>
+                        <span>Medium</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: lightgreen;"></span>
+                        <span>High</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: green;"></span>
+                        <span>Very High</span>
+                    </div>
+                </div>
+                <div class="aoi-item" style="margin-bottom: 10px;">
+                    <div>
+                        <i class="fas fa-layer-group"></i> Vegetation Index
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="layer2" name="layer2">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="slider-container" style="margin-bottom: 10px;">
+                    <input type="range" min="2020" max="2024" value="2023" class="year-slider" id="year2">
+                    <span id="year2-value">2023</span>
+                </div>
+                <div class="legend" style="padding-left: 20px; margin-bottom: 10px;">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: red;"></span>
+                        <span>Very Low</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: orange;"></span>
+                        <span>Low</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: yellow;"></span>
+                        <span>Medium</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: lightgreen;"></span>
+                        <span>High</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: green;"></span>
+                        <span>Very High</span>
+                    </div>
+                </div>
+                <div class="aoi-item" style="margin-bottom: 10px;">
+                    <div>
+                        <i class="fas fa-layer-group"></i> Super Reso Basemap (1m)
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="layer3" name="layer3">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="slider-container" style="margin-bottom: 10px;">
+                    <input type="range" min="2020" max="2024" value="2023" class="year-slider" id="year3">
+                    <span id="year3-value">2023</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <img src="https://cdn-icons-png.flaticon.com/512/2917/2917995.png" alt="Forest Logo" style="height: 40px; vertical-align: middle;">
+            <p style="display: inline; margin-left: 10px;">CARBON STOCK ANALYSIS</p>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([-2.6835, 119.5712], 6);
+
+        const baseLayers = {
+            "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }),
+            "Satellite": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                maxZoom: 17,
+                attribution: '© OpenTopoMap contributors'
+            })
+        };
+
+        baseLayers["OpenStreetMap"].addTo(map);
+
+        L.control.layers(baseLayers, null, { position: 'topleft' }).addTo(map);
+
+        // Tab switching logic
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.add('hidden'));
+
+                tab.classList.add('active');
+                const tabContent = document.getElementById(tab.dataset.tab);
+                tabContent.classList.remove('hidden');
+            });
+        });
+
+        document.getElementById("uploadAOI").addEventListener("click", () => {
+            document.getElementById("fileInput").click();
+        });
+
+        document.getElementById("fileInput").addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const geojson = JSON.parse(e.target.result);
+                    const geojsonLayer = L.geoJSON(geojson, {
+                        style: function(feature) {
+                            return {
+                                fillopacity: 0,
+                                color: '3388ff',
+                                weight: 2
+                            };
+                        }
+                    }).addTo(map);
+                    map.fitBounds(geojsonLayer.getBounds());
+
+                    // Add AOI to the list
+                    const aoiList = document.getElementById("aoi-tab");
+                    const currentDate = new Date().toLocaleDateString();
+                    const aoiItem = document.createElement("div");
+                    aoiItem.className = "aoi-item";
+                    aoiItem.innerHTML = `
+                        <div>
+                            <i class="fas fa-map-marker-alt"></i> ${file.name}
+                            <span>(${currentDate})</span>
+                        </div>
+                        <i class="fas fa-ellipsis-v menu-icon"></i>
+                    `;
+                    aoiList.insertBefore(aoiItem, aoiList.firstChild);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById("runAnalysis").addEventListener("click", () => {
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            loadingOverlay.style.display = "flex";
+            setTimeout(() => {
+                loadingOverlay.style.display = "none";
+                alert("Analysis complete!");
+
+                // Switch to the "ANALYSIS" tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
+
+                const analysisTab = document.querySelector('.tab[data-tab="analysis-tab"]');
+                const analysisContent = document.getElementById("analysis-tab");
+
+                analysisTab.classList.add('active');
+                analysisContent.classList.remove('hidden');
+            }, 5000);
+        });
+
+        // Layer toggle logic
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', (event) => {
+                const layerId = event.target.id;
+                const yearSlider = document.getElementById(`year${layerId[layerId.length - 1]}`);
+                if (event.target.checked) {
+                    yearSlider.value = 2020;
+                    document.getElementById(`${yearSlider.id}-value`).textContent = 2020;
+                    updateWmsLayer(yearSlider.id, 2020);
+                } else {
+                    if (wmsLayers[yearSlider.id]) {
+                        map.removeLayer(wmsLayers[yearSlider.id]);
+                    }
+                }
+            });
+        });
+
+        // Year slider logic
+        let wmsLayers = {};
+
+        function updateWmsLayer(layerId, year) {
+            let wmsUrl;
+            switch (layerId) {
+                case 'year1':
+                    switch (year) {
+                        case '2020':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3AAGBD_2017@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        case '2021':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3AAGBD_2018@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        case '2022':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3AAGBD_2019@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        case '2023':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3AAGBD_2020@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        default:
+                            wmsUrl = '';
+                    }
+                    break;
+                case 'year2':
+                    switch (year) {
+                        case '2020':
+                            wmsUrl = 'https://example.com/vegetation_index_2020';
+                            break;
+                        case '2021':
+                            wmsUrl = 'https://example.com/vegetation_index_2021';
+                            break;
+                        case '2022':
+                            wmsUrl = 'https://example.com/vegetation_index_2022';
+                            break;
+                        case '2023':
+                            wmsUrl = 'https://example.com/vegetation_index_2023';
+                            break;
+                        default:
+                            wmsUrl = '';
+                    }
+                    break;
+                case 'year3':
+                    switch (year) {
+                        case '2020':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/my_workspace_5%3Asr_for_rnd_2019@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        case '2021':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3Asr_for_rnd_2020@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        case '2022':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3Asr_for_rnd_2021@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        case '2023':
+                            wmsUrl = 'https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3Asr_for_rnd_2022@EPSG%3A900913@png/{z}/{x}/{-y}.png';
+                            break;
+                        default:
+                            wmsUrl = '';
+                    }
+                    break;
+                default:
+                    wmsUrl = '';
+            }
+
+            if (wmsLayers[layerId]) {
+                map.removeLayer(wmsLayers[layerId]);
+            }
+
+            if (wmsUrl) {
+                wmsLayers[layerId] = L.tileLayer(wmsUrl);
+                wmsLayers[layerId].addTo(map);
+            }
+        }
+
+        document.querySelectorAll('.year-slider').forEach(slider => {
+            slider.addEventListener('input', (event) => {
+                const yearValue = document.getElementById(`${event.target.id}-value`);
+                yearValue.textContent = event.target.value;
+                updateWmsLayer(event.target.id, event.target.value);
+            });
+        });
+
+        document.getElementById("downloadGeojson").addEventListener("click", () => {
+            const downloadUrl = "https://drive.google.com/file/d/1YYBNfcdhAd0M-BS5RZqN_tZjHhzIm86C/view?usp=sharing";
+            window.open(downloadUrl, '_blank');
+        });
+
+        document.getElementById("showComparison").addEventListener("click", () => {
+            const comparisonUrl = "https://storage.googleapis.com/sentinel-s2dr3/s2dr3demo15.html?ds=US-T16TGP-20240720-u90963b1#14.7/43.44027/-83.74039";
+            window.open(comparisonUrl, '_blank');
+        });
+
+        document.getElementById("infoIcon").addEventListener("click", () => {
+            document.getElementById("infoPopup").style.display = "block";
+        });
+
+        document.getElementById("closePopup").addEventListener("click", () => {
+            document.getElementById("infoPopup").style.display = "none";
+        });
+
+        document.getElementById("backendFlow").addEventListener("click", () => {
+            document.getElementById("backendImage").style.display = "block";
+        });
+
+        document.getElementById("closeImage").addEventListener("click", () => {
+            document.getElementById("backendImage").style.display = "none";
+        });
+    </script>
+</body>
+</html>

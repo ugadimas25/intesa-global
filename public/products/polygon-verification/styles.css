@@ -1,0 +1,263 @@
+/* Style untuk map dan tampilan tetap di atas */
+/* Hapus pengaturan tinggi tetap dari peta */
+#map {
+  width: 100%;
+  height: 80vh; /* Adjust height to 80% of the viewport height */
+  border-radius: 10px;
+}
+
+.table-container {
+  width: 65%; /* Ensure the table width matches the map width */
+  height: 20vh; /* Adjust height to 20% of the viewport height */
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+  z-index: 1000;
+  margin-top: 20px; /* Add margin to separate the table from the map */
+  position: absolute; /* Overlay on the map */
+  bottom: 0; /* Position at the bottom */
+  display: none; /* Initially hidden */
+}
+
+/* Kontainer untuk menyelaraskan map dengan informasi */
+.sync-height {
+  display: flex;
+}
+
+.scroll-container {
+  max-height: calc(100vh - 40px); /* Adjust height to full screen minus some margin */
+  overflow-y: auto;
+  padding-right: 15px;
+}
+
+.container {
+  margin-top: 20px;
+}
+
+.map-container {
+  margin-bottom: 20px;
+}
+
+.badge-verified {
+  background-color: #28a745;
+  color: white;
+  padding: 0.5em 1em;
+  border-radius: 10px;
+}
+
+.badge-nonverified {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.5em 1em;
+  border-radius: 10px;
+}
+
+.badge-major-overlap {
+  background-color: #dc3545; /* Red color */
+  color: white;
+  padding: 0.5em 1em;
+  border-radius: 10px;
+}
+
+.info-header {
+  font-size: 1.5em;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.card {
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  margin-bottom: 15px;
+}
+
+.edit-button {
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
+.form-control {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: none;
+  height: 40px;
+  text-align: left;
+}
+
+.input-group-text {
+  background-color: transparent;
+  border: none;
+  font-size: 1.2em;
+  margin-left: -8px;
+}
+
+.form-control:focus {
+  border-color: #28a745;
+  box-shadow: none;
+}
+
+.data-type {
+  background-color: #e7f9ec;
+  padding: 10px;
+  border-radius: 10px;
+  color: #28a745;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 40px;
+}
+
+.data-type-nonverified {
+  background-color: #fdeaea;
+  padding: 10px;
+  border-radius: 10px;
+  color: #dc3545;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 40px;
+}
+
+.updated-by {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: left;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+hr {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+/* Align the Data Fields Properly */
+.data-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* For rounded corners in card */
+.card {
+  border-radius: 10px;
+}
+
+.toggle-button, .show-table-button, .hide-table-button {
+  position: absolute;
+  top: 150px; /* Set top position */
+  right: -50px; /* Set right position */
+  z-index: 1000;
+  background-color: #ff9800; /* Green background */
+  color: white; /* White text */
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transform: rotate(270deg); /* Rotate 270 degrees */
+}
+
+.extra-space {
+    margin-top: 20px;
+}
+
+.issue-field {
+    background-color: #fdeaea;
+    color: #dc3545;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    height: 40px;
+}
+
+.save-button {
+  margin-bottom: 10px;
+  position: absolute;
+  top: 15px;
+  right: 250px;
+  z-index: 1000;
+  background-color: #d4edda;
+  color: #28a745;
+  display: none;
+}
+
+.no-issue {
+  background-color: #e7f9ec;
+  color: #28a745;
+  font-weight: 600;
+}
+
+.loading-animation {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  text-align: center;
+}
+
+.loading-animation .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+.loading-animation p {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: #007bff;
+}
+
+/* Styles for the Show Table and Hide Table buttons */
+.show-table-button, .hide-table-button {
+  position: absolute;
+  top: 335px; /* Set top position */
+  right: -16px; /* Set right position */
+  z-index: 1000;
+  background-color: #ff9800; /* Green background */
+  color: white; /* White text */
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transform: rotate(270deg); /* Rotate 270 degrees */
+}
+
+.hide-table-button {
+  display: none; /* Initially hidden */
+}
+
+.basemap-control {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.basemap-option {
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #555;
+  border: 1px solid #ccc;
+  background-color: white;
+}
+
+.basemap-option.active {
+  background-color: #ff9800;
+  color: white;
+}

@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polygon Detail</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <!-- Leaflet Draw CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Style untuk map dan tampilan tetap di atas */
+    /* Hapus pengaturan tinggi tetap dari peta */
+    #map {
+      width: 100%;
+      height: calc(100vh - 40px); /* Adjust height to full screen minus some margin */
+      border-radius: 10px;
+    }
+
+    /* Kontainer untuk menyelaraskan map dengan informasi */
+    .sync-height {
+      display: flex;
+    }
+
+    .scroll-container {
+      max-height: calc(100vh - 40px); /* Adjust height to full screen minus some margin */
+      overflow-y: auto;
+      padding-right: 15px;
+    }
+
+    .container {
+      margin-top: 20px;
+      padding-top: 20px; /* Add padding to the top */
+    }
+
+    .map-container {
+      margin-bottom: 20px;
+    }
+    .badge-verified {
+      background-color: #28a745;
+      color: white;
+      padding: 0.5em 1em;
+      border-radius: 10px;
+    }
+
+    .badge-nonverified {
+      background-color: #dc3545;
+      color: white;
+      padding: 0.5em 1em;
+      border-radius: 10px;
+    }
+
+    .badge-major-overlap {
+      background-color: #dc3545; /* Red color */
+      color: white;
+      padding: 0.5em 1em;
+      border-radius: 10px;
+    }
+
+    .info-header {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .card {
+      border-radius: 12px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      margin-bottom: 15px;
+    }
+
+    .edit-button {
+      border-radius: 8px;
+      padding: 8px 16px;
+    }
+
+    .form-control {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: none;
+      height: 40px;
+      text-align: left;
+    }
+
+    .input-group-text {
+      background-color: transparent;
+      border: none;
+      font-size: 1.2em;
+      margin-left: -8px;
+    }
+
+    .form-control:focus {
+      border-color: #28a745;
+      box-shadow: none;
+    }
+
+    .data-type {
+      background-color: #e7f9ec;
+      padding: 10px;
+      border-radius: 10px;
+      color: #28a745;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      height: 40px;
+    }
+
+    .data-type-nonverified {
+      background-color: #fdeaea;
+      padding: 10px;
+      border-radius: 10px;
+      color: #dc3545;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      height: 40px;
+    }
+
+    .updated-by {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 10px;
+      text-align: left;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    hr {
+      margin-top: 1.5em;
+      margin-bottom: 1.5em;
+    }
+
+    /* Align the Data Fields Properly */
+    .data-field {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    /* For rounded corners in card */
+    .card {
+      border-radius: 10px;
+    }
+
+    .toggle-button {
+      margin-bottom: 10px;
+      position: absolute;
+      top: 160px; /* Set top position */
+      right: -60px; /* Set right position */
+      z-index: 1000;
+      background-color: #ff9800; /* Green background */
+      color: white; /* White text */
+      transform: rotate(270deg); /* Rotate 270 degrees */
+    }
+
+    .extra-space {
+        margin-top: 20px;
+    }
+
+    .issue-field {
+        background-color: #fdeaea;
+        color: #dc3545;
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        height: 40px;
+    }
+
+    .save-button {
+      margin-bottom: 10px;
+      position: absolute;
+      top: 680px;
+      right: 27px;
+      z-index: 1000;
+      background-color: #28a745;
+      color: #d4edda;
+      display: none;
+    }
+
+    .no-issue {
+      background-color: #e7f9ec;
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .loading-animation {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1050;
+      text-align: center;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <!-- Remove the back link -->
+    <!-- <div class="d-flex justify-content-between align-items-center mb-3">
+      <a href="index.html" class="text-success fw-bold">Back to polygon verification</a>
+    </div> -->
+
+    <div class="row">
+      <div class="col-md-8 map-container position-relative">
+        <button id="save-button" class="btn save-button">Save</button>
+        <button id="toggle-detail-button" class="btn btn-outline-primary toggle-button">Hide Detail Information</button>
+        <button class="btn show-table-button">Show Table</button>
+        <button class="btn hide-table-button">Hide Table</button>
+        <div id="map"></div>
+        <div class="basemap-control">
+          <div class="basemap-option active" id="btn-light">Light</div>
+          <div class="basemap-option" id="btn-dark">Dark</div>
+          <div class="basemap-option" id="btn-satellite">Satellite</div>
+        </div>
+      </div>
+
+      <div class="col-md-4 scroll-container" id="detail-information">
+        <!-- Detail Information -->
+        <h4 class="info-header">Detail Information</h4>
+
+        <div class="row">
+          <!-- Baris pertama: Farmer ID dan District -->
+          <div class="col-md-6">
+            <label class="custom-label">Farmer ID</label>
+            <div class="form-control">F2204000054122</div>
+          </div>
+          <div class="col-md-6">
+            <label class="custom-label">Issue</label>
+            <div class="issue-field" id="issue-field">Major Overlap</div>
+          </div>
+        </div>
+
+        <div class="row mt-3">
+          <!-- Baris kedua: Farmer NR dan Area Def -->
+          <div class="col-md-6">
+            <label class="custom-label">Farmer NR</label>
+            <div class="form-control">Dimas</div>
+          </div>
+          <div class="col-md-6">
+            <label class="custom-label">Area def</label>
+            <div class="form-control">3.10 (ha)</div>
+          </div>
+        </div>
+
+        <!-- Add extra space -->
+        <div class="extra-space"></div>
+
+        <!-- Map Correction Section -->
+        <h5 class="info-header">Map Correction</h5>
+
+        <!-- Version 1 (Verified) -->
+        <div class="card" id="card-pair-1">
+          <div class="card-body">
+            <!-- Version section with buttons -->
+            <div class="d-flex justify-content-between">
+              <h6><span class="badge badge-major-overlap" id="badge-pair-1">Major overlap : Pair 1</span></h6>
+              <div class="dropdown">
+                <button class="btn btn-outline-success btn-sm dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    Action
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item" href="#">Zoom to polygon</a></li>
+                    <li><a class="dropdown-item edit-polygon" href="#">Edit</a></li>
+                </ul>
+              </div>
+            </div>
+            <hr />
+
+            <!-- Data Fields in 4 columns (2 rows) -->
+            <div class="row">
+              <div class="col-md-6">
+                <label class="custom-label">Farmer ID</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" value="F2215420054122" readonly>
+                  <span class="input-group-text">
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="custom-label">Issue</label>
+                <div class="data-type-nonverified" id="issue-pair-1">Major overlap</div>
+              </div>
+            </div>
+
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <label class="custom-label">Date</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" value="02/12/2023" readonly>
+                  <span class="input-group-text">
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="custom-label">Updated by</label>
+                <div class="updated-by">John Doe</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Version 2 (Not Verified) -->
+        <div class="card" id="card-pair-2">
+          <div class="card-body">
+            <!-- Version section with buttons -->
+            <div class="d-flex justify-content-between">
+              <h6><span class="badge badge-nonverified" id="badge-pair-2">Major overlap : Pair 2</span></h6>
+              <div class="dropdown">
+                <button class="btn btn-outline-success btn-sm dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
+                    Action
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
+                    <li><a class="dropdown-item" href="#">Zoom to polygon</a></li>
+                    <li><a class="dropdown-item edit-polygon" href="#">Edit</a></li>
+                </ul>
+              </div>
+            </div>
+            <hr />
+
+            <!-- Data Fields in 4 columns (2 rows) -->
+            <div class="row">
+              <div class="col-md-6">
+                <label class="custom-label">Farmer ID</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" value="02/12/2023" readonly>
+                  <span class="input-group-text">
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="custom-label">Issue</label>
+                <div class="data-type-nonverified" id="issue-pair-2">Major overlap</div>
+              </div>
+            </div>
+
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <label class="custom-label">Date</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" value="02/12/2023" readonly>
+                  <span class="input-group-text">
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="custom-label">Updated by</label>
+                <div class="updated-by">John Doe</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Table from index.html -->
+    <div class="container table-container">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Action</th>
+              <th scope="col">No</th>
+              <th scope="col">Farmer ID</th>
+              <th scope="col">Name</th>
+              <th scope="col">External ID (Client's Code)</th>
+              <th scope="col">Plot</th>
+              <th scope="col">Commodity</th>
+              <th scope="col">Species</th>
+              <th scope="col">Location</th>
+              <th scope="col">Error Type</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Row 1 -->
+            <tr>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                    ▼
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                    <li><a class="dropdown-item" href="#" id="polygonVerification">Polygon verification</a></li>
+                    <li><a class="dropdown-item text-danger" href="#">Remove</a></li>
+                  </ul>
+                </div>
+              </td>
+              <td>1</td>
+              <td>ID12345678909876</td>
+              <td>Emma</td>
+              <td>ID12345678909876</td>
+              <td>Plot 1</td>
+              <td>Coffee</td>
+              <td>Robusta</td>
+              <td>District 1</td>
+              <td><span class="badge bg-warning">Duplicate</span></td>
+              <td><span class="badge bg-success">Verified</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <button class="btn show-table-button position-relative">Show Table</button>
+    <button class="btn hide-table-button position-relative">Hide Table</button>
+  </div>
+
+  <!-- Loading Animation -->
+  <div id="loading-animation" class="loading-animation">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Revalidation</p>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <script src="scripts.js"></script>
+  <script>
+      // Fungsi untuk menyamakan tinggi map dengan konten sebelah kanan
+  function syncMapHeight() {
+    var mapElement = document.getElementById('map');
+    var infoElement = document.querySelector('.scroll-container');
+    mapElement.style.height = infoElement.offsetHeight + 'px';
+  }
+  // Jalankan fungsi ketika halaman dimuat
+  window.onload = syncMapHeight;
+  // Jalankan fungsi ketika ukuran jendela diubah (untuk responsif)
+  window.onresize = syncMapHeight;
+    // Inisialisasi Leaflet Map
+    var map = L.map('map').setView([-5.1406, 119.4221], 13);  // Koordinat Bone, Sulawesi
+
+    // Tambahkan basemap OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Polygon 1 - Version 1 (Verified)
+    var polygon1 = L.polygon([
+      [-5.1396, 119.4211],
+      [-5.1406, 119.4221],
+      [-5.1416, 119.4215],
+      [-5.1405, 119.4205]
+    ], {color: 'green'}).addTo(map);
+    polygon1.bindPopup("Version 1 (Verified)");
+
+    // Polygon 2 - Version 2 (Not Verified)
+    var polygon2 = L.polygon([
+      [-5.1390, 119.4210],
+      [-5.1400, 119.4220],
+      [-5.1410, 119.4210],
+      [-5.1400, 119.4200]
+    ], {color: 'orange'}).addTo(map);
+    polygon2.bindPopup("Version 2 (Not Verified)");
+
+    // Initialize Leaflet Draw
+    var editableLayers = new L.FeatureGroup();
+    map.addLayer(editableLayers);
+
+    var drawControl = new L.Control.Draw({
+        edit: {
+            featureGroup: editableLayers,
+            poly: {
+                allowIntersection: false
+            }
+        },
+        draw: false
+    });
+    map.addControl(drawControl);
+
+    // Function to enable editing of polygon
+    function enablePolygonEditing(polygon) {
+        editableLayers.addLayer(polygon);
+        polygon.editing.enable();
+        document.getElementById('save-button').style.display = 'block';
+    }
+
+    // Add event listeners for "Edit" actions
+    document.querySelectorAll('.edit-polygon').forEach(function(element) {
+        element.addEventListener('click', function(event) {
+            event.preventDefault();
+            const badgeText = this.closest('.dropdown').previousElementSibling.querySelector('.badge').textContent;
+            if (badgeText.includes('Pair 1')) {
+                enablePolygonEditing(polygon1);
+            } else if (badgeText.includes('Pair 2')) {
+                enablePolygonEditing(polygon2);
+            }
+        });
+    });
+
+    // Function to check for overlaps
+    function checkForOverlaps(polygon) {
+        // Dummy function to simulate overlap check
+        // Replace this with actual logic to check for overlaps
+        return false; // Assume no overlap for demonstration
+    }
+
+    // Save button functionality
+    document.getElementById('save-button').addEventListener('click', function() {
+        console.log('Save button clicked');
+        editableLayers.eachLayer(function(layer) {
+            if (layer.editing && layer.editing.enabled()) {
+                layer.editing.disable();
+                // Save the edited polygon data
+                var editedData = layer.toGeoJSON();
+                console.log('Edited Polygon Data:', editedData);
+                // You can send the editedData to your server here
+
+                // Check for overlaps
+                var hasOverlap = checkForOverlaps(layer);
+                if (!hasOverlap) {
+                    // Update issue field to No issue and change color to green
+                    var issueField = document.getElementById('issue-field');
+                    issueField.textContent = 'No issue';
+                    issueField.classList.remove('issue-field');
+                    issueField.classList.add('no-issue');
+
+                    // Update the issue fields for Pair 1 and Pair 2
+                    document.getElementById('issue-pair-1').textContent = 'No issue';
+                    document.getElementById('issue-pair-1').classList.remove('data-type-nonverified');
+                    document.getElementById('issue-pair-1').classList.add('no-issue');
+                    document.getElementById('issue-pair-2').textContent = 'No issue';
+                    document.getElementById('issue-pair-2').classList.remove('data-type-nonverified');
+                    document.getElementById('issue-pair-2').classList.add('no-issue');
+
+                    // Remove the badges for Pair 1 and Pair 2
+                    document.getElementById('badge-pair-1').style.display = 'none';
+                    document.getElementById('badge-pair-2').style.display = 'none';
+                }
+            }
+        });
+        document.getElementById('save-button').style.display = 'none';
+
+        // Show loading animation
+        var loadingAnimation = document.getElementById('loading-animation');
+        loadingAnimation.style.display = 'block';
+
+        // Hide loading animation after 0.5 seconds
+        setTimeout(function() {
+            loadingAnimation.style.display = 'none';
+        }, 2000);
+    });
+
+    // Toggle Detail Information visibility
+    document.getElementById('toggle-detail-button').addEventListener('click', function() {
+        const detailInfo = document.getElementById('detail-information');
+        const mapContainer = document.querySelector('.map-container');
+        const mapElement = document.getElementById('map');
+        if (detailInfo.style.display === 'none') {
+            detailInfo.style.display = 'block';
+            mapContainer.classList.remove('col-md-12');
+            mapContainer.classList.add('col-md-8');
+            this.textContent = 'Hide Detail Information';
+        } else {
+            detailInfo.style.display = 'none';
+            mapContainer.classList.remove('col-md-8');
+            mapContainer.classList.add('col-md-12');
+            this.textContent = 'Show Detail Information';
+        }
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    });
+  </script>
+</body>
+</html>

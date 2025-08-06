@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agriculture Emission Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+</head>
+<body>
+    <div class="main-content">
+        <header class="header">
+            <h1>Agriculture Emission Dashboard</h1>
+            <div class="filters">
+                <select id="farm">
+                    <option disabled selected>Select Farm</option>
+                    <option>Farm A</option>
+                    <option>Farm B</option>
+                    <option>Farm C</option>
+                    <option>Farm D</option>
+                </select>
+                <select id="crop">
+                    <option disabled selected>Select Crop</option>
+                    <option>Crop 1</option>
+                    <option>Crop 2</option>
+                    <option>Crop 3</option>
+                    <option>Crop 4</option>
+                </select>
+                <select id="process">
+                    <option disabled selected>Process Stage</option>
+                    <option>Planting</option>
+                    <option>Growing</option>
+                    <option>Harvesting</option>
+                    <option>Processing</option>
+                    <option>Packaging</option>
+                    <option>Distribution</option>
+                </select>
+                <select id="from-year">
+                    <option disabled selected>From Year</option>
+                    <option>2019</option>
+                    <option>2020</option>
+                    <option>2021</option>
+                    <option>2022</option>
+                    <option>2023</option>
+                </select>
+                <select id="to-year">
+                    <option disabled selected>To Year</option>
+                    <option>2019</option>
+                    <option>2020</option>
+                    <option>2021</option>
+                    <option>2022</option>
+                    <option>2023</option>
+                </select>
+                <div class="buttons-group">
+                    <button id="search-btn">Search</button>
+                    <button id="export-btn">Export</button>
+                </div>
+            </div>            
+        </header>
+        <div style="display: none;">
+            <img id="logo-vcs" src="port_4_ghg_dashboard/image/logo-vcs.jpg" alt="VCS Logo">
+            <img id="logo-ghg" src="port_4_ghg_dashboard/image/logo-ghg-protocol.png" alt="GHG Protocol Logo">
+            <img id="logo-ipcc" src="port_4_ghg_dashboard/image/logo-ipcc.png" alt="IPCC Logo">
+        </div>
+        <section class="dashboard-grid">
+            <div id="barChart" class="chart-container"></div>
+            <div id="lineChart" class="chart-container"></div>
+            <div id="pieChartEnergy" class="chart-container"></div>
+            <div id="stackedChartEmissions" class="chart-container"></div>
+            <div id="yearlyEmissionChart" class="chart-container"></div>
+            <div id="yearlyEnergyChart" class="chart-container"></div>
+        </section>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>

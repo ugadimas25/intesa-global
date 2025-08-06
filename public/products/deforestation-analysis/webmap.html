@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Land Use Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #container {
+            width: 100%;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        #filter-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #stats-overlay {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            width: 300px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        #basemap-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .basemap-option {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+
+        .basemap-option.active {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .chart-container {
+            margin-bottom: 20px;
+        }
+
+        .chart-container canvas {
+            width: 100%;
+            height: 200px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .filter-category {
+            margin-bottom: 20px;
+        }
+
+        .toggle-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 20px;
+        }
+
+        .slider::before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #ff9800;
+        }
+
+        input:checked + .slider::before {
+            transform: translateX(20px);
+        }
+
+        .link {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ff9800;
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        #start-analysis-button {
+            width: 150px;
+            height: 40px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        #start-analysis-button img {
+            width: 20px;
+            height: 20px;
+        }
+
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #ff9800;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="map"></div>
+        <div id="filter-overlay">
+            <h3>Deforestation Analysis</h3>
+            <label for="analysis">Analysis Type</label>
+            <select id="analysis">
+                <option value="eudr">EUDR</option>
+            </select>
+
+            <div class="filter-category">
+                <span>Filter</span>
+                <select id="year-filter">
+                    <option value="2020">Select Year</option>
+                    <option value="2021">2021</option>
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                </select>
+                <select>
+                    <option value="2020">Select Country</option>
+                    <option value="2021">Indonesia</option>
+                    <option value="2022">Thailand</option>
+                    <option value="2023">Ivory Coast</option>
+                </select>
+                <select>
+                    <option value="2020">Select Province</option>
+                    <option value="2021">Kalimantan Barat</option>
+                    <option value="2022">Sulawesi Selatan</option>
+                    <option value="2023">Aceh</option>
+                </select>
+
+                <!-- Start Analysis Button di bawah tetapi di kanan -->
+                <div style="display: flex; justify-content: flex-end;">
+                    <button id="start-analysis-button">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3523/3523886.png" alt="Machine Logo">
+                        Start Analysis
+                    </button>
+                </div>
+            </div>
+
+            <div class="filter-category">
+                <h3>Forest Cover</h3>
+                <div class="toggle-group">
+                    <span>JRC - Global Forest Cover</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="forestToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>GFW - Primary Forest</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="gfwToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>GFW - Tree Cover Loss</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sbtnToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="filter-category" id="analysis-result" style="display: none;">
+                <h3>Analysis result</h3>
+                <div class="toggle-group">
+                    <span>Concession</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="concessionToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Deforestation</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="deforestationToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <span>Deforestation by concession</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="defByConcessionToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <a href="#" class="link">Explore detailed references →</a>
+        </div>
+
+        <div id="stats-overlay">
+            <h3>Statistics</h3>
+            <div id="deforestation-description" class="chart-container">
+                <!-- Description will be added here by JavaScript -->
+            </div>
+            <div class="chart-container">
+                <canvas id="deforestationChart"></canvas>
+            </div>
+            <div id="deforestationByConcession-description" class="chart-container">
+                <!-- Description will be added here by JavaScript -->
+            </div>
+            <div class="chart-container">
+                <canvas id="deforestationByPlotChart"></canvas>
+            </div>
+        </div>
+
+        <div id="basemap-switch">
+            <div class="basemap-option active" id="btn-light">Light</div>
+            <div class="basemap-option" id="btn-dark">Dark</div>
+            <div class="basemap-option" id="btn-satellite">Satellite</div>
+        </div>
+    </div>
+
+    <div id="loading-overlay">
+        <div class="loader"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const map = L.map('map').setView([-1.6144, 113.593], 6);
+
+        const light = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors',
+        });
+
+        const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19,
+        });
+
+        const satellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            maxZoom: 20,
+            attribution: '© Google',
+        });
+
+        light.addTo(map);
+
+        const forestLayer = L.tileLayer('https://geoserver-development.koltivaapi.com/geoserver/gwc/service/tms/1.0.0/koltiva_gis_internal%3Agis_int_eudr_jrc_wms@EPSG%3A900913@png/{z}/{x}/{-y}.png', {
+            attribution: '© Koltiva Geoserver',
+            maxZoom: 19,
+        });
+
+        const gfwLayer = L.tileLayer('https://storage.googleapis.com/earthenginepartners-hansen/tiles/Primary_HT_forests_2001/{z}/{x}/{y}.png', {
+            attribution: '© Koltiva Geoserver',
+            maxZoom: 19,
+        });
+
+        const sbtnLayer = L.tileLayer('https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png?', {
+            attribution: '© Koltiva Geoserver',
+            maxZoom: 19,
+        });
+
+        const basemapButtons = document.querySelectorAll('.basemap-option');
+        basemapButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                basemapButtons.forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                map.eachLayer((layer) => map.removeLayer(layer));
+                if (btn.id === 'btn-light') light.addTo(map);
+                if (btn.id === 'btn-dark') dark.addTo(map);
+                if (btn.id === 'btn-satellite') satellite.addTo(map);
+            });
+        });
+
+        // Bounding box koordinat wilayah Kalimantan Barat
+        const kalbarBounds = [
+                [2.0833, 108.625], // Koordinat barat laut (northwest)
+                [-3.0737, 114.800] // Koordinat tenggara (southeast)
+            ];
+
+        // Fungsi zoom ke Kalimantan Barat menggunakan koordinat bounding box
+        function zoomToKalbar() {
+            map.fitBounds(kalbarBounds); // Zoom ke bounding box Kalbar
+        }
+
+        // Toggle Forest Area
+        document.getElementById('forestToggle').addEventListener('change', function () {
+            this.checked ? forestLayer.addTo(map) : map.removeLayer(forestLayer);
+        });
+
+        // Toggle GFW Layer
+        document.getElementById('gfwToggle').addEventListener('change', function () {
+            this.checked ? gfwLayer.addTo(map) : map.removeLayer(gfwLayer);
+        });
+
+        // Toggle SBTN Layer
+        document.getElementById('sbtnToggle').addEventListener('change', function () {
+            this.checked ? sbtnLayer.addTo(map) : map.removeLayer(sbtnLayer);
+        });
+
+        // Fungsi untuk menyembunyikan atau menampilkan elemen
+        function toggleVisibility(elementId, show) {
+            const element = document.getElementById(elementId);
+            element.style.display = show ? 'block' : 'none';
+        }
+
+        // Sembunyikan "Analysis result" di awal (sebelum tombol diklik)
+        document.addEventListener('DOMContentLoaded', function () {
+            toggleVisibility('analysis-result-section', false);
+        });
+
+        document.getElementById('start-analysis-button').addEventListener('click', function () {
+            // Show loading animation
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            // Zoom ke Kalimantan Barat
+            zoomToKalbar();
+
+            // Simulate loading time before showing analysis result
+            setTimeout(() => {
+                // Hide loading animation
+                document.getElementById('loading-overlay').style.display = 'none';
+
+                // Tampilkan "Analysis result"
+                document.getElementById('analysis-result').style.display = 'block';
+            }, 2000); // Adjust the timeout duration as needed
+        });
+
+        let concessionLayer;
+        document.getElementById('concessionToggle').addEventListener('change', function() {
+            if (this.checked) {
+                fetch('data/c_company.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        concessionLayer = L.geoJSON(data, {
+                            style: {
+                                color: 'blue' // Change color to green
+                            }
+                        }).addTo(map);
+                    })
+                    .catch(error => console.error('Error loading GeoJSON data:', error));
+            } else {
+                if (concessionLayer) {
+                    map.removeLayer(concessionLayer);
+                }
+            }
+        });
+
+        let deforestationLayer;
+        document.getElementById('deforestationToggle').addEventListener('change', function() {
+            if (this.checked) {
+                fetch('data/d_deforestation_dissolved.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        deforestationLayer = L.geoJSON(data, {
+                            style: {
+                                color: 'red' // Change color to red
+                            }
+                        }).addTo(map);
+                    })
+                    .catch(error => console.error('Error loading GeoJSON data:', error));
+            } else {
+                if (deforestationLayer) {
+                    map.removeLayer(deforestationLayer);
+                }
+            }
+        });
+
+        let defByConcessionLayer;
+        document.getElementById('defByConcessionToggle').addEventListener('change', function() {
+            if (this.checked) {
+                fetch('data/b_def_by_plot.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        defByConcessionLayer = L.geoJSON(data, {
+                            style: {
+                                color: 'orange' // Change color to blue
+                            }
+                        }).addTo(map);
+                    })
+                    .catch(error => console.error('Error loading GeoJSON data:', error));
+            } else {
+                if (defByConcessionLayer) {
+                    map.removeLayer(defByConcessionLayer);
+                }
+            }
+        });
+
+        document.getElementById('start-analysis-button').addEventListener('click', function () {
+            // alert('Zooming to Kalimantan Barat...');
+            zoomToKalbar(); // Panggil fungsi zoom
+            });
+
+        new Chart(document.getElementById('deforestationChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['2001', '2005', '2010', '2015', '2020'],
+                datasets: [{
+                    label: 'Deforestation Area (ha)',
+                    data: [5000, 10000, 15000, 20000, 25000],
+                    backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                    borderColor: 'rgba(255, 152, 0, 1)',
+                }]
+            }
+        });
+
+        new Chart(document.getElementById('deforestationByPlotChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['2001', '2005', '2010', '2015', '2020'],
+                datasets: [{
+                    label: 'Deforestation by Plot',
+                    data: [2000, 8000, 12000, 18000, 22000],
+                    backgroundColor: 'rgba(255, 87, 34, 0.2)',
+                    borderColor: 'rgba(255, 87, 34, 1)',
+                }]
+            }
+        });
+
+        // Function to calculate total area from GeoJSON polygons
+        function calculateTotalArea(geojsonData) {
+            return geojsonData.features.reduce((total, feature) => {
+                return total + L.geoJSON(feature).getLayers()[0].getArea();
+            }, 0);
+        }
+
+        // Fetch and display deforestation statistics
+        fetch('data/d_deforestation_dissolved.geojson')
+            .then(response => response.json())
+            .then(data => {
+                const totalDeforestationArea = calculateTotalArea(data);
+                document.getElementById('deforestation-description').innerHTML = `
+                    <p>Total deforestation area after 2020: ${totalDeforestationArea.toFixed(2)} hectares</p>
+                `;
+            })
+            .catch(error => console.error('Error loading deforestation data:', error));
+
+        fetch('data/b_def_by_plot.geojson')
+            .then(response => response.json())
+            .then(data => {
+                const totalDefByConcessionArea = calculateTotalArea(data);
+                document.getElementById('deforestationByConcession-description').innerHTML = `
+                    <p>Total deforestation by concession area: ${totalDefByConcessionArea.toFixed(2)} hectares</p>
+                `;
+            })
+            .catch(error => console.error('Error loading deforestation by concession data:', error));
+    </script>
+</body>
+
+</html>
