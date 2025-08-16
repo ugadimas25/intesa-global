@@ -56,7 +56,7 @@ const Contact: React.FC = () => {
                 <Mail className="contact-icon" />
                 <div>
                   <h4>Email</h4>
-                  <p>info@intesaglobal.com</p>
+                  <p>integrateknonusa@gmail.com</p>
                 </div>
               </div>
 
