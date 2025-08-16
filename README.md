@@ -99,8 +99,8 @@ src/
 
 ## 📞 Contact
 
-- **Email**: info@intesaglobal.com
-- **Phone**: +62 21 1234 5678
+- **Email**: integrateknonusa@gmail.com
+- **Phone**: +62 852 3625 7722
 - **Business Hours**: Monday-Friday 9AM-6PM WIB
 
 ## 🚀 Available Scripts

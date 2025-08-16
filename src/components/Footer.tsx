@@ -58,11 +58,11 @@ const Footer: React.FC = () => {
               <ul className="contact-info">
                 <li>
                   <Mail size={16} />
-                  <span>info@intesaglobal.com</span>
+                  <span>integrateknonusa@gmail.com</span>
                 </li>
                 <li>
                   <Phone size={16} />
-                  <span>+62 21 1234 5678</span>
+                  <span>+62 852 3625 7722</span>
                 </li>
                 <li>
                   <MapPin size={16} />
